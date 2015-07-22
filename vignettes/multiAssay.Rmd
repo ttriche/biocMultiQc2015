@@ -41,7 +41,14 @@ LAML_multi[, 1:10]
 ## check gender matches that specified in clinical:
 library(ozymandias)
 plotX(LAML_multi)
+
+## save a copy too
+png(filename="plotX.png", 600, 600)
+plotX(LAML_multi)
+dev.off()
 ```
+![predicted vs. inferred gender](plotX.png "gender plot") 
+
 
 ```{r, eval=FALSE}
 ## Fit overall survival with TP53 point mutations
@@ -49,11 +56,16 @@ library(survival)
 p53mutant <- LAML_multi@perSampleMetadata$drivers['TP53',]
 cox <- with(as(colData(LAML_multi), "data.frame"),
             coxph(Surv(OS, OSevent) ~ p53mutant))
+png("p53.survival.png", 600, 600)
 plot(with(as(colData(LAML_multi), "data.frame"),
              survfit(Surv(OS, OSevent) ~ p53mutant)),
           col=c("green","red"), lwd=3, ylab="months",
           main="Survival of TP53-mutant vs. wildtype AML patients")
+dev.off()
+```
+![p53 mutant survival](p53.survival.png "p53 plot") 
 
+```{r, eval=FALSE}
 ## what discriminates TP53 mutants best?
 library(matrixStats)
 autosomeBetas <- function(x) {
@@ -74,27 +86,42 @@ it can be more or less reliable.  As with any QC it helps to look at the data.
 colside <- c("green","red")[p53mutant + 1] 
 jet <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan",
                           "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
+png("p53.heatmap.png", 600, 600)
 dend <- heatmap(autosomeBetas(LAML_multi)[top, ], 
                 col=jet(255), scale="none", ColSideColors=colside, 
                 main=paste("DNA methylation: TP53-mutant vs. wildtype AML"),
                 keep.dendro=TRUE)$Colv
+dev.off()
+```
+![p53 mutant heatmap](p53.heatmap.png "p53 plot") 
 
+
+```{r, eval=FALSE}
 ## Identify TP53-deleted patients who were not initially flagged as TP53-mutant
 p53like <- cutree(tree=as.hclust(dend), k=3)[colnames(LAML_multi)]
 colside2 <- c("green","red","red")[p53like] 
+png("p53like.heatmap.png", 600, 600)
 heatmap(autosomeBetas(LAML_multi)[top, ], 
                 col=jet(255), scale="none", ColSideColors=colside2, 
                 main=paste("DNA methylation: TP53-mutant vs. wildtype AML"))
+dev.off()
+```
+![p53-like heatmap](p53like.heatmap.png "p53like plot") 
 
+
+```{r, eval=FALSE}
 ## Fit overall survival again
 p53copy <- p53like > 1 | p53mutant
 cox <- with(as(colData(LAML_multi), "data.frame"),
             coxph(Surv(OS, OSevent) ~ p53copy))
+png("p53like.survival.png", 600, 600)
 plot(with(as(colData(LAML_multi), "data.frame"),
              survfit(Surv(OS, OSevent) ~ p53copy)),
           col=c("green","red"), lwd=3, ylab="months",
           main="Survival of TP53-mutant-like vs. wildtype AML patients")
+dev.off()
 ```
+![p53-like survival](p53like.survival.png "p53like survival") 
 
 There's at least one guy who seems like he might not belong.  Let's investigate.
 
@@ -104,7 +131,13 @@ maybeOutlier <- names(which(p53copy)[ which.max(LAML_multi$OS[p53copy]) ])
 maybeOutlier <- which(colnames(LAML_multi) == maybeOutlier)
 
 ## look at his copy number calls
+png("outlierCNV.png", height=300, width=800)
 plotSample(perSampleMetadata(LAML_multi)$CNV, maybeOutlier, ylim=c(-1, 1))
+dev.off()
+```
+![p53-like outlier](outlierCNV.png "outlier") 
+
+```{r, eval=FALSE}
 LAML_multi$predictedSex[maybeOutlier] ## "M"
 p53mutant[maybeOutlier] ## FALSE 
 
@@ -114,19 +147,21 @@ p53copy[maybeOutlier] <- FALSE
 ## Fit overall survival again
 cox <- with(as(colData(LAML_multi), "data.frame"),
             coxph(Surv(OS, OSevent) ~ p53copy))
+
+png("p53like.survival.revised.png", 600, 600)
 plot(with(as(colData(LAML_multi), "data.frame"),
              survfit(Surv(OS, OSevent) ~ p53copy)),
           col=c("green","red"), lwd=3, ylab="months",
           main="Survival of TP53-mutant-like vs. wildtype AML patients")
-
-## is there an obvious enriched pathway? ebrowser is pitching a fit, shelve it.
-## repeat for the rest that aren't called as p53 SNVs/indels by sequencing...
-## 
+dev.off()
 
 ## 
 rm(LAML_multi)
 gc(,T) ## free up some RAM
 ```
+[post-outlier](p53like.survival.revised.png "revised")
+
+Lather, rinse, repeat as necessary (and CAFE will correlate CN with expression).
 
 # IGV from within R 
 
@@ -153,13 +188,15 @@ IGVload(sock, getBwUrl("CN_AML_DMRs.neglog10p.hg19.bw"))
 IGVload(sock, getBwUrl("TCGA_AML_DMRs.neglog10p.hg19.bw"))
 IGVload(sock, getBwUrl("CD14-CTCF.signal.bw"))
 IGVgoto(sock, "chr11:32,427,807-32,479,566")
+IGVsnapshot(sock, "AML.CTCF.DMR.check.png")
 ## clearly we need to increase the smoothing parameter a little bit
+```
+![AML DMRs](AML.CTCF.DMR.check.png "IGV plot") 
 
+```{r, eval=FALSE}
 ## We were mostly interested in the effect of WT1 itself being mutated:
 IGVload(sock, getBwUrl("THP_WT1_DMRs.neglog10p.hg19.bw"))
+IGVsnapshot(sock, "WT1.CTCF.DMR.check.png")
 ## That, at least, doesn't seem to be driven by CTCF. 
-
-## if you want:
-IGVsnapshot(sock, file="WT1.CTCF.DMR.check.png")
-
 ```
+![WT1 DMR](WT1.CTCF.DMR.check.png "IGV plot") 
