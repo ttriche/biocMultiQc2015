@@ -200,3 +200,5 @@ IGVsnapshot(sock, "WT1.CTCF.DMR.check.png")
 ## That, at least, doesn't seem to be driven by CTCF. 
 ```
 ![WT1 DMR](WT1.CTCF.DMR.check.png "IGV plot") 
+
+So that resolved a discussion we were having on Monday about the poster!
