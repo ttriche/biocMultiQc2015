@@ -1,0 +1,159 @@
+---
+title: "Multi-assay QC and visualization"
+author: "Tim Triche, Jr."
+date: "July 17th, 2015"
+output: html_document
+---
+
+# Overview
+
+Hopefully, one of the outcomes of this year's conference will be more elegant 
+approaches to doing this, so that similar datasets in the future can be lazily
+evaluated for data relevant to a given query. The QC and visualization steps 
+are unlikely to become any less relevant, however.
+
+# a couple of additional functions not in the AMI:
+```{r}
+library(ozymandias) ## where the class is defined 
+
+## integrity-preserving subset operation for MultiAssayExperiment
+setMethod("[", c("MultiAssayExperiment", "ANY", "ANY"),
+          function(x, i, j, ..., drop=TRUE) {
+            ## Only if perSampleMetadata isn't empty and j is set
+            if (!missing(j) && length(x@perSampleMetadata) > 0) {
+              x@perSampleMetadata <- lapply(x@perSampleMetadata,
+                                            function(z) z[,j])
+            }
+            callNextMethod()
+          })
+```
+# AML, combined in a different fashion (from Level 1 arrays & Level 3 mutations)
+
+```{r, eval=FALSE}
+data(LAML_multi)
+
+## check gender matches that specified in clinical:
+library(ozymandias)
+plotX(LAML_multi)
+```
+
+```{r, eval=FALSE}
+## Fit overall survival with TP53 point mutations
+library(survival)
+p53mutant <- LAML_multi@perSampleMetadata$drivers['TP53',]
+cox <- with(as(colData(LAML_multi), "data.frame"),
+            coxph(Surv(OS, OSevent) ~ p53mutant))
+plot(with(as(colData(LAML_multi), "data.frame"),
+             survfit(Surv(OS, OSevent) ~ p53mutant)),
+          col=c("green","red"), lwd=3, ylab="months",
+          main="Survival of TP53-mutant vs. wildtype AML patients")
+
+## what discriminates TP53 mutants best?
+library(matrixStats)
+autosomeBetas <- function(x) {
+  assays(keepSeqlevels(LAML_multi, paste0("chr", 1:22)))$Beta
+}
+library(limma)
+design <- model.matrix(~ p53mutant)
+fit <- eBayes(lmFit(autosomeBetas(LAML_multi), design))
+top <- rownames(topTable(fit, coef=2, n=500))
+```
+
+Depending on how you go about this (plotting the CNV data in perSampleMetadata
+to verify which of the p53-like patients was in fact p53-deleted is what we did)
+it can be more or less reliable.  As with any QC it helps to look at the data. 
+
+```{r, eval=FALSE}
+## flag TP53 mutants, look for any phenocopies
+colside <- c("green","red")[p53mutant + 1] 
+jet <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan",
+                          "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
+dend <- heatmap(autosomeBetas(LAML_multi)[top, ], 
+                col=jet(255), scale="none", ColSideColors=colside, 
+                main=paste("DNA methylation: TP53-mutant vs. wildtype AML"),
+                keep.dendro=TRUE)$Colv
+
+## Identify TP53-deleted patients who were not initially flagged as TP53-mutant
+p53like <- cutree(tree=as.hclust(dend), k=3)[colnames(LAML_multi)]
+colside2 <- c("green","red","red")[p53like] 
+heatmap(autosomeBetas(LAML_multi)[top, ], 
+                col=jet(255), scale="none", ColSideColors=colside2, 
+                main=paste("DNA methylation: TP53-mutant vs. wildtype AML"))
+
+## Fit overall survival again
+p53copy <- p53like > 1 | p53mutant
+cox <- with(as(colData(LAML_multi), "data.frame"),
+            coxph(Surv(OS, OSevent) ~ p53copy))
+plot(with(as(colData(LAML_multi), "data.frame"),
+             survfit(Surv(OS, OSevent) ~ p53copy)),
+          col=c("green","red"), lwd=3, ylab="months",
+          main="Survival of TP53-mutant-like vs. wildtype AML patients")
+```
+
+There's at least one guy who seems like he might not belong.  Let's investigate.
+
+```{r, eval=FALSE}
+## check this person's CN at 17p (survival is radically different)
+maybeOutlier <- names(which(p53copy)[ which.max(LAML_multi$OS[p53copy]) ])
+maybeOutlier <- which(colnames(LAML_multi) == maybeOutlier)
+
+## look at his copy number calls
+plotSample(perSampleMetadata(LAML_multi)$CNV, maybeOutlier, ylim=c(-1, 1))
+LAML_multi$predictedSex[maybeOutlier] ## "M"
+p53mutant[maybeOutlier] ## FALSE 
+
+## Looks like that was a miscall 
+p53copy[maybeOutlier] <- FALSE 
+
+## Fit overall survival again
+cox <- with(as(colData(LAML_multi), "data.frame"),
+            coxph(Surv(OS, OSevent) ~ p53copy))
+plot(with(as(colData(LAML_multi), "data.frame"),
+             survfit(Surv(OS, OSevent) ~ p53copy)),
+          col=c("green","red"), lwd=3, ylab="months",
+          main="Survival of TP53-mutant-like vs. wildtype AML patients")
+
+## is there an obvious enriched pathway? ebrowser is pitching a fit, shelve it.
+## repeat for the rest that aren't called as p53 SNVs/indels by sequencing...
+## 
+
+## 
+rm(LAML_multi)
+gc(,T) ## free up some RAM
+```
+
+# IGV from within R 
+
+IGV is terrific for plotting your data interactively and poking at it.  It's 
+also fairly straightforward to pull in data from remote sites (just like in R).
+If you get tired of IGV mangling your session.xml files, or just want to 
+create and export data on the fly, R can help with that:
+
+```{r, eval=FALSE}
+
+library(SRAdb) ## for IGV 
+startIGV()
+sock <- IGVsocket()
+pubUrl <- "https://dl.dropboxusercontent.com/u/12962689/bigWigs/"
+getBwUrl <- function(x) paste0(pubUrl, x)
+
+## switch to hg19 
+IGVclear(sock)
+IGVgenome(sock, "hg19")
+IGVgoto(sock, "WT1")
+
+## AML-specific DMRs don't SEEM to cross the CTCF site at first, but...
+IGVload(sock, getBwUrl("CN_AML_DMRs.neglog10p.hg19.bw"))
+IGVload(sock, getBwUrl("TCGA_AML_DMRs.neglog10p.hg19.bw"))
+IGVload(sock, getBwUrl("CD14-CTCF.signal.bw"))
+IGVgoto(sock, "chr11:32,427,807-32,479,566")
+## clearly we need to increase the smoothing parameter a little bit
+
+## We were mostly interested in the effect of WT1 itself being mutated:
+IGVload(sock, getBwUrl("THP_WT1_DMRs.neglog10p.hg19.bw"))
+## That, at least, doesn't seem to be driven by CTCF. 
+
+## if you want:
+IGVsnapshot(sock, file="WT1.CTCF.DMR.check.png")
+
+```
