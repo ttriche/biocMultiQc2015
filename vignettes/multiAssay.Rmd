@@ -33,7 +33,7 @@ setMethod("[", c("MultiAssayExperiment", "ANY", "ANY"),
 ## example from package:
 data(LAML_multi)
 ```
-# TCGA AML, primarily from raw data & Synapse mutations
+# TCGA AML, from raw data & Synapse mutations
 ```{r}
 LAML_multi
 ```
