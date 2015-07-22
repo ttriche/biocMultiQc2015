@@ -32,13 +32,44 @@ setMethod("[", c("MultiAssayExperiment", "ANY", "ANY"),
 
 ## example from package:
 data(LAML_multi)
-
-LAML_multi
-
-LAML_multi[, 1:10] 
-
 ```
 # TCGA AML, primarily from raw data & Synapse mutations
+```{r}
+LAML_multi
+```
+```
+class: MultiAssayExperiment 
+dim: 485512 173 
+metadata(0):
+assays(1): Beta
+rownames(485512): cg13869341 cg14008030 ... cg08265308 cg14273923
+rowRanges metadata column names(0):
+colnames(173): TCGA-AB-2811 TCGA-AB-2973 ... TCGA-AB-2833 TCGA-AB-2971
+colData names(18): Tissue Study_Group ... exprRisk UPN
+perSampleMetadata: SNPs affy drivers CNV 
+  colnames(perSampleMetadata(SNPs)):  TCGA-AB-2811 ... TCGA-AB-2971 
+  colnames(perSampleMetadata(affy)):  TCGA-AB-2811 ... TCGA-AB-2971 
+  colnames(perSampleMetadata(drivers)):  TCGA-AB-2811 ... TCGA-AB-2971 
+  colnames(perSampleMetadata(CNV)):  TCGA-AB-2811 ... TCGA-AB-2971 
+```
+```{r}
+LAML_multi[, 1:10] 
+```
+```
+class: MultiAssayExperiment 
+dim: 485512 10 
+metadata(0):
+assays(1): Beta
+rownames(485512): cg13869341 cg14008030 ... cg08265308 cg14273923
+rowRanges metadata column names(0):
+colnames(10): TCGA-AB-2811 TCGA-AB-2973 ... TCGA-AB-2832 TCGA-AB-2847
+colData names(18): Tissue Study_Group ... exprRisk UPN
+perSampleMetadata: SNPs affy drivers CNV 
+  colnames(perSampleMetadata(SNPs)):  TCGA-AB-2811 ... TCGA-AB-2847 
+  colnames(perSampleMetadata(affy)):  TCGA-AB-2811 ... TCGA-AB-2847 
+  colnames(perSampleMetadata(drivers)):  TCGA-AB-2811 ... TCGA-AB-2847 
+  colnames(perSampleMetadata(CNV)):  TCGA-AB-2811 ... TCGA-AB-2847 
+```
 
 See https://www.synapse.org/#!Synapse:syn1710680 for the per-tumor "cleaned" 
 mutations used here. The raw MAFs from FireHose releases can be messy. 
