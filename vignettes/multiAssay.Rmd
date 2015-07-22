@@ -168,7 +168,11 @@ Lather, rinse, repeat as necessary (and CAFE will correlate CN with expression).
 IGV is terrific for plotting your data interactively and poking at it.  It's 
 also fairly straightforward to pull in data from remote sites (just like in R).
 If you get tired of IGV mangling your session.xml files, or just want to 
-create and export data on the fly, R can help with that:
+create and export data on the fly, R can help with that.  In this example, we 
+had generated smoothed Manhattan plots of differentially methylated regions 
+associated with acute myeloid leukemia of normal karyotype, and a point about
+CTCF binding sites was raised.  In the process we discovered something we needed
+to tune in the algorithm, and verified that a separate result was unaffected.
 
 ```{r, eval=FALSE}
 
