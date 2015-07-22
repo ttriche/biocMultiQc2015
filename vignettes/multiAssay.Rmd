@@ -159,7 +159,7 @@ dev.off()
 rm(LAML_multi)
 gc(,T) ## free up some RAM
 ```
-[post outlier](p53like.survival.revised.png "revised")
+![post outlier](p53like.survival.revised.png "revised")
 
 Lather, rinse, repeat as necessary (and CAFE will correlate CN with expression).
 
