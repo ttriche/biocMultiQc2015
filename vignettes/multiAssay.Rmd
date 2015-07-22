@@ -14,7 +14,7 @@ are unlikely to become any less relevant, however.
 
 # a couple of additional functions not in the AMI:
 ```{r}
-library(ozymandias) ## where the class is defined 
+library(bioc2015multiomicsworkshop) ## pulls in ozymandias 
 
 ## integrity-preserving subset operation for MultiAssayExperiment
 setMethod("[", c("MultiAssayExperiment", "ANY", "ANY"),
@@ -26,12 +26,18 @@ setMethod("[", c("MultiAssayExperiment", "ANY", "ANY"),
             }
             callNextMethod()
           })
+
+## example from package:
+data(LAML_multi)
+
+LAML_multi
+
+LAML_multi[, 1:10] 
+
 ```
 # AML, combined in a different fashion (from Level 1 arrays & Level 3 mutations)
 
 ```{r, eval=FALSE}
-data(LAML_multi)
-
 ## check gender matches that specified in clinical:
 library(ozymandias)
 plotX(LAML_multi)
