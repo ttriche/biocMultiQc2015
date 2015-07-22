@@ -1,7 +1,7 @@
 ---
 title: "Multi-assay QC and visualization"
 author: "Tim Triche, Jr."
-date: "July 17th, 2015"
+date: "July 22nd, 2015"
 output: html_document
 ---
 
@@ -72,7 +72,8 @@ perSampleMetadata: SNPs affy drivers CNV
 ```
 
 See https://www.synapse.org/#!Synapse:syn1710680 for the per-tumor "cleaned" 
-mutations used here. The raw MAFs from FireHose releases can be messy. 
+mutations used here.  
+The raw MAFs from FireHose releases can be messy. 
 
 ```{r, eval=FALSE}
 ## check gender matches that specified in clinical:
