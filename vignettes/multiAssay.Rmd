@@ -5,17 +5,20 @@ date: "July 17th, 2015"
 output: html_document
 ---
 
+```{r}
+library(bioc2015multiomicsworkshop) ## pulls in ozymandias 
+```
+
 # Overview
 
 Hopefully, one of the outcomes of this year's conference will be more elegant 
 approaches to doing this, so that similar datasets in the future can be lazily
 evaluated for data relevant to a given query. The QC and visualization steps 
-are unlikely to become any less relevant, however.
+are unlikely to become any less relevant, however.  The multiset used here is 
+structured as a "master" container where all of the linked assays must have 
+the same column names as the master, and the subset operation preserves this.
 
-# a couple of additional functions not in the AMI:
 ```{r}
-library(bioc2015multiomicsworkshop) ## pulls in ozymandias 
-
 ## integrity-preserving subset operation for MultiAssayExperiment
 setMethod("[", c("MultiAssayExperiment", "ANY", "ANY"),
           function(x, i, j, ..., drop=TRUE) {
@@ -35,7 +38,10 @@ LAML_multi
 LAML_multi[, 1:10] 
 
 ```
-# AML, combined in a different fashion (from Level 1 arrays & Level 3 mutations)
+# TCGA AML, primarily from raw data & Synapse mutations
+
+See https://www.synapse.org/#!Synapse:syn1710680 for the per-tumor "cleaned" 
+mutations used here. The raw MAFs from FireHose releases can be messy. 
 
 ```{r, eval=FALSE}
 ## check gender matches that specified in clinical:
