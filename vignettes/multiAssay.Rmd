@@ -141,7 +141,7 @@ colside2 <- c("green","red","red")[p53like]
 png("p53like.heatmap.png", 600, 600)
 heatmap(autosomeBetas(LAML_multi)[top, ], 
                 col=jet(255), scale="none", ColSideColors=colside2, 
-                main=paste("DNA methylation: TP53-mutant vs. wildtype AML"))
+                main=paste("DNA methylation: TP53-mutant-like vs. wildtype AML"))
 dev.off()
 ```
 ![p53-like heatmap](p53like.heatmap.png "p53like plot") 
